@@ -130,16 +130,6 @@ def train(config, logger, train_loader, val_loader, exp='sinkhorn'):
             logger.info('Train mean loss:{}, assistant loss: {} \n'.format(mean_loss, np.mean(s_loss)))
             print('Train mean loss:{}, assistant loss: {}'.format(mean_loss, np.mean(s_loss)))
             writer.add_scalars(f'{config["training"]["log_dir"]}_Loss', {'train_loss_mean': mean_loss}, epoch)
-            logger.info('Save model...')
-            savepath = str(checkpoints_dir) + '/self_best_model.pth'
-            logger.info('Saving at %s' % savepath)
-            print('Saving at %s' % savepath)
-            state = {
-                'best_loss': best_loss,
-                'model_state_dict': ema_net.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-            }
-            torch.save(state, savepath)
             # if epoch > 100:
             #     if config['training']['cb']:
             #         cb_train, cb_val, num_clusters = validate(train_loader, val_loader, ema_net, logger,epoch=epoch, best_cb_train=best_cb_train,  best_cb_val=best_cb_val, md = 'hdbscan', cb = config['training']['cb'])
@@ -233,6 +223,16 @@ def train(config, logger, train_loader, val_loader, exp='sinkhorn'):
                 if mean_val_loss < best_val_loss:
                     best_val_loss = mean_val_loss
                     early_stopping_counter = 0
+                    logger.info('Save model...')
+                    savepath = str(checkpoints_dir) + '/self_best_model.pth'
+                    logger.info('Saving at %s' % savepath)
+                    print('Saving at %s' % savepath)
+                    state = {
+                        'best_val_loss': best_val_loss,
+                        'model_state_dict': ema_net.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                    }
+                    torch.save(state, savepath)
                 else:
                     early_stopping_counter += 1
 
@@ -245,6 +245,16 @@ def train(config, logger, train_loader, val_loader, exp='sinkhorn'):
             else:
                 if mean_val_loss < best_val_loss:
                     best_val_loss = mean_val_loss
+                    logger.info('Save model...')
+                    savepath = str(checkpoints_dir) + '/self_best_model.pth'
+                    logger.info('Saving at %s' % savepath)
+                    print('Saving at %s' % savepath)
+                    state = {
+                        'best_val_loss': best_val_loss,
+                        'model_state_dict': ema_net.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                    }
+                    torch.save(state, savepath)
 
             global_epoch += 1          
 

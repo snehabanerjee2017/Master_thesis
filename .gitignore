@@ -2,3 +2,4 @@
 log/
 extra/
 .idea/
+dataset/__pycache__/
