@@ -1,0 +1,3 @@
+in_dir: "/mnt/data/das-sb/dataset_hdf5"    # the location where the entire dataset is available
+out_dir: "/mnt/data/das-sb/dataset_hdf5_processed"  # the path of the directory to which the hdf5 files are to be stored
+p_keep: 0.85

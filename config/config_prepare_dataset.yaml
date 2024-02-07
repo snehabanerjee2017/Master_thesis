@@ -1,0 +1,4 @@
+in_dir: "/mnt/data/mvoe/datasets/abc/stl2"    # the location where the entire dataset is available
+out_dir: "/mnt/data/das-sb/dataset_hdf5_processed"  # the path of the directory to which the hdf5 files are to be stored
+num_points: 2048
+p_keep: 0.85
