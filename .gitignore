@@ -1,5 +1,9 @@
 # folders
+dataset/__pycache__/
 log/
 extra/
 .idea/
-dataset/__pycache__/
+lib/__pycache__/
+model/__pycache__/
+DBCV/__pycache__/
+
