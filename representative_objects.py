@@ -57,7 +57,7 @@ torch.cuda.empty_cache()
 all_points = np.concatenate(all_points,axis=0)
 print(f'Dimension of dataset {all_points.shape}')
 
-pca = PCA(n_components=config['pca']['n_components'],n_jobs=-1)
+pca = PCA(n_components=config['pca']['n_components'])
 start = time.time()
 all_points = pca.fit_transform(all_points)
 end = time.time()

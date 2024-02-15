@@ -23,7 +23,7 @@ from DBCV.DBCV_multiproc import DBCV
 
 config = parse_args()
 test_data_loader = data_loader(config)
-pca = PCA(n_components=config['pca']['n_components'],n_jobs=-1)
+pca = PCA(n_components=config['pca']['n_components'])
 tsne = TSNE(n_components=config['tsne']['n_components'],n_jobs=-1)
 with torch.cuda.device(config['util']['gpu']):
     ema_net = load_model(config)
