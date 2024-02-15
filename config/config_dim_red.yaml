@@ -3,7 +3,7 @@ dataset:
   type: "abc"
   num_point: 2048
 model:
-  path: "log/PointNet/2024-02-04_13-57/sinkhorn/PointNet/checkpoints/self_best_model.pth"
+  path: "/home/das-sb/GIT/source_library/log/PointNet/2024-02-08_15-54/sinkhorn/PointNet/checkpoints/self_best_model.pth"
   name: "BYOL"
   proj_dim: 256
   tau: 0.01
@@ -17,7 +17,7 @@ util:
   gpu: 0
   workers: 8 
 training:
-  train: True
+  train: False
   train_val_percent: 0.85
   train_test_split: 0.95
   unsup: True
@@ -25,7 +25,7 @@ training:
   is_recon: True
   normal: False
   log_dir: "PointNet"
-  batch_size: 200
+  batch_size: 128
   epoch: 200
   learning_rate: 0.001
   lr_decay: 0.5
@@ -41,5 +41,7 @@ pca:
   n_components: 50
 tsne:
   n_components: 2
+dbcv:
+  num_points: 5000
   
 
