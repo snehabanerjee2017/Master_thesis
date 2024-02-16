@@ -32,13 +32,15 @@ config['training']['train'] = True
 train_data_loader, val_data_loader = data_loader(config)
 with torch.cuda.device(config['util']['gpu']):
     ema_net = load_model(config)
+    emb_all_points = []
     all_points = []
     for batch_id, train_data in tqdm(enumerate(train_data_loader, 0), total=len(train_data_loader), smoothing=0.9,desc = 'train dataset'):
         x1, _ = train_data
         x1 = x1.cuda()
         x1 = x1.transpose(2, 1)
         emb =  ema_net(x1,return_embedding=config['training']['return_embedding'])
-        all_points.append(emb[0].detach().cpu().numpy())
+        emb_all_points.append(emb[0].detach().cpu().numpy())
+        all_points.append(train_data[0].detach().cpu().numpy())
     del train_data_loader
     gc.collect()
     torch.cuda.empty_cache() 
@@ -47,7 +49,8 @@ with torch.cuda.device(config['util']['gpu']):
         x1 = x1.cuda()
         x1 = x1.transpose(2, 1)
         emb =  ema_net(x1,return_embedding=config['training']['return_embedding'])
-        all_points.append(emb[0].detach().cpu().numpy())
+        emb_all_points.append(emb[0].detach().cpu().numpy())
+        all_points.append(val_data[0].detach().cpu().numpy())
     del val_data_loader
     gc.collect()
     torch.cuda.empty_cache() 
@@ -55,26 +58,48 @@ del ema_net
 gc.collect()
 torch.cuda.empty_cache() 
 all_points = np.concatenate(all_points,axis=0)
+emb_all_points = np.concatenate(emb_all_points,axis=0)
 print(f'Dimension of dataset {all_points.shape}')
+print(f'Dimension of dataset embedding {emb_all_points.shape}')
 
 pca = PCA(n_components=config['pca']['n_components'])
 start = time.time()
-all_points = pca.fit_transform(all_points)
+emb_all_points = pca.fit_transform(emb_all_points)
 end = time.time()
-print(f'Dimesnion after PCA {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+print(f'Dimesnion after PCA {emb_all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
 
 tsne = TSNE(n_components=config['tsne']['n_components'],n_jobs=-1)
 start = time.time()
-all_points = tsne.fit_transform(all_points)
+emb_all_points = tsne.fit_transform(emb_all_points)
 end = time.time()
-print(f'Dimesnion after TSNE {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+print(f'Dimesnion after TSNE {emb_all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
 
-clf = HDBSCAN(min_cluster_size=2,allow_single_cluster=True,n_jobs=-1,store_centers='medoid')
+clf = HDBSCAN(min_cluster_size=5,allow_single_cluster=True,n_jobs=-1,store_centers='medoid')
 start = time.time()
-pred_val = clf.fit_predict(all_points)
+pred_val = clf.fit_predict(emb_all_points)
 num_clusters = num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
 end = time.time()
 print(f'Clustering validation dataset took {end-start} seconds')
 
-with open('/home/das-sb/GIT/source_library/medoids.npy', 'wb') as f:
+with open('/mnt/data/das-sb/results/all_medoids.npy', 'wb') as f:
     np.save(f, clf.medoids_)
+all_medoids = np.load("/mnt/data/das-sb/results/all_medoids.npy")
+
+all_medoid_indices = []
+for medoid in tqdm(all_medoids):
+    if medoid in emb_all_points:
+        all_medoid_indices.append(np.where(emb_all_points==medoid)[0][0])
+    else:
+        raise Exception(f'medoid {medoid} not found in embedding of all points')
+    
+all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
+print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
+
+with open('/mnt/data/das-sb/results/all_rep_emb.npy', 'wb') as f:
+    np.save(f, all_rep_emb)
+
+all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
+print(f'Dimension of all representative  objects {all_rep_objects.shape}')
+
+with open('/mnt/data/das-sb/results/all_rep_objects.npy', 'wb') as f:
+    np.save(f, all_rep_objects)
