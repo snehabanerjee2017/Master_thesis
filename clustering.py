@@ -50,10 +50,12 @@ with torch.cuda.device(config['util']['gpu']):
     all_points = tsne.fit_transform(all_points)
     end = time.time()
     print(f'Dimesnion after TSNE {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
-    clf = HDBSCAN(min_cluster_size=2,allow_single_cluster=True,n_jobs=-1,store_centers='medoid')
+    clf = HDBSCAN(min_cluster_size=2,n_jobs=-1,store_centers='medoid')
     start = time.time()
     pred_val = clf.fit_predict(all_points)
     num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
+    print(pred_val.tolist().count(-1))
+    print(num_clusters)
     end = time.time()
     print(f'Clustering validation dataset took {end-start} seconds')
     start = time.time()

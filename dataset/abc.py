@@ -44,8 +44,9 @@ def _load_data_file(name:str)->np.ndarray:
     Returns:
         np.ndarray: A numpy array with all the instances in the hdf5 file
     """    
-    f = h5py.File(name)
-    data = f['data'][:]
+    with h5py.File(name, 'r') as f:
+        data = f['data'][:]
+    
     return data
 
 class Abc(data.Dataset):

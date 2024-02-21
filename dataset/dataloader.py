@@ -10,13 +10,12 @@ from dataset.abc import Abc
 
 
 def data_loader(config):
-    train_svmset, test_svmset = None, None
     if config['dataset']['type'] == 'abc':
         if config['training']['train']:
-            train_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=True, use_normal=config['training']['normal'], unsup=config['training']['unsup'], angle=config['model']['angle'], p_keep=config['model']['crop'], train_val_percent=config['training']['train_val_percent'], train_test_split = config['training']['train_test_split'])
-            val_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=True, use_normal=config['training']['normal'], unsup=config['training']['unsup'], angle=config['model']['angle'], p_keep=config['model']['crop'], train_val_percent=config['training']['train_val_percent'],train_test_split = config['training']['train_test_split'], val = True)         
+            train_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=True, use_normal=config['training']['normal'], unsup=config['training']['unsup'], angle=config['model']['angle'], p_keep=config['model']['crop'], train_val_percent=config['dataset']['train_val_percent'], train_test_split = config['dataset']['train_test_split'])
+            val_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=True, use_normal=config['training']['normal'], unsup=config['training']['unsup'], angle=config['model']['angle'], p_keep=config['model']['crop'], train_val_percent=config['dataset']['train_val_percent'],train_test_split = config['dataset']['train_test_split'], val = True)         
         else:
-            test_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=False, use_normal=config['training']['normal'], unsup=False, angle=0.0)
+            test_dataset = Abc(root=config['dataset']['path'], n_point=config['dataset']['num_point'], train=False, unsup=False, angle=0.0,train_test_split=config['dataset']['train_test_split'],p_keep=config['model']['crop'])
     else:
         raise NotImplementedError
     

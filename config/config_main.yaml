@@ -11,27 +11,27 @@ model:
 dataset:
     path: "/mnt/data/das-sb/dataset_hdf5_processed"
     type: "abc"
-    num_point: 2048
-training:
-    train: True
+    num_point: 2048    
     train_val_percent: 0.85
     train_test_split: 0.95
+training:
+    train: True
     unsup: True
     l_type: "gl"
     is_recon: True
     normal: False
     log_dir: "PointNet"
-    batch_size: 200
+    batch_size: 160
     epoch: 200
-    learning_rate: 0.001
-    lr_decay: 0.5
-    lr_patience: 5
+    learning_rate: 0.01
+    lr_decay: 0.1
+    lr_patience: 3
     optimizer: "AdamW"
     decay_rate: 0.0001
     aug: "jitter"
     early_stopping: True
-    early_stopping_patience: 10
+    early_stopping_patience: 5
     cb: False
 util:
-    gpu: 1
+    gpu: 0
     workers: 8     

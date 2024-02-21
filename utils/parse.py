@@ -2,11 +2,15 @@ import argparse
 import yaml
 from model.encoders import PointNet, DGCNN, SCGEncoder
 from model.model import MLP, SiamCluster
+from scipy.spatial.distance import directed_hausdorff
 import torch
 import time
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.cluster import DBSCAN, HDBSCAN, KMeans
 
 
 def parse_args():
@@ -52,6 +56,16 @@ def load_model(config,logger=None):
         return ema_net, logger
     else:
         return ema_net
+    
+def calculate_similarity(points,rep_objs):
+    mins = []
+    for point in tqdm(points):
+        hds = []
+        for rep_obj in rep_objs:
+            haus_dist = directed_hausdorff(point, rep_obj)
+            hds.append(haus_dist)
+        mins.append(min(hds))
+    return mins
     
 def train(config, logger, train_loader, val_loader, checkpoints_dir,exp='sinkhorn'):
     """MODEL LOADING"""    
@@ -167,3 +181,35 @@ def train(config, logger, train_loader, val_loader, checkpoints_dir,exp='sinkhor
 
         end = time.time()
         print(f'Training {global_epoch} epochs took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+
+
+def get_pca(n_components:int,data:np.ndarray):
+    pca = PCA(n_components=n_components)
+    start = time.time()
+    data = pca.fit_transform(data)
+    end = time.time()
+    print(f'Dimesnion after PCA {data.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+    return data
+
+def get_tsne(n_components:int,data:np.ndarray):
+    tsne = TSNE(n_components=n_components,n_jobs=-1)
+    start = time.time()
+    data = tsne.fit_transform(data)
+    end = time.time()
+    print(f'Dimesnion after TSNE {data.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+    return data
+
+def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',):
+    if classifier == 'hdbscan':
+        clf = HDBSCAN(min_cluster_size=5,allow_single_cluster=True,n_jobs=-1,store_centers=store_centers)
+    else:
+        raise Exception(f"{classifier} not implemented")
+    start = time.time()
+    pred_val = clf.fit_predict(data)
+    num_clusters = num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
+    print(f"Number of outliers {pred_val.tolist().count(-1)}")
+    print(f"Number of clusters excluding outliers {num_clusters}")
+    end = time.time()
+    print(f'Clustering validation dataset took {end-start} seconds')
+
+    return clf, pred_val

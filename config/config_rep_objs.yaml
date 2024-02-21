@@ -19,7 +19,7 @@ util:
   gpu: 1
   workers: 8 
 training:
-  train: False
+  train: True
   unsup: True
   l_type: "gl"
   is_recon: True
@@ -41,7 +41,8 @@ pca:
   n_components: 50
 tsne:
   n_components: 2
-dbcv:
-  num_points: 1000
+results:
+  dir_path: "/mnt/data/das-sb/results"
+
   
 
