@@ -3,3 +3,4 @@ log/
 extra/
 .idea/
 **/__pycache__/
+*.ipynb
