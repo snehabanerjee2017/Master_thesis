@@ -14,7 +14,7 @@ from tqdm import tqdm
 from lib.dbscan_utils import validate
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from utils.parse import parse_args, load_model
+from utils.parse import parse_args, load_model, get_clusters, get_pca, get_tsne
 from dataset.dataloader import data_loader
 from sklearn.cluster import DBSCAN, HDBSCAN
 from scipy.spatial.distance import directed_hausdorff
@@ -23,8 +23,6 @@ from DBCV.DBCV_multiproc import DBCV
 
 config = parse_args()
 test_data_loader = data_loader(config)
-pca = PCA(n_components=config['pca']['n_components'])
-tsne = TSNE(n_components=config['tsne']['n_components'],n_jobs=-1)
 with torch.cuda.device(config['util']['gpu']):
     ema_net = load_model(config)
     all_points = []
@@ -43,24 +41,15 @@ with torch.cuda.device(config['util']['gpu']):
     end = time.time()
     print(f'Dimension of dataset {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
     start = time.time()
-    all_points = pca.fit_transform(all_points)
-    end = time.time()
-    print(f'Dimesnion after PCA {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+    all_points = get_pca(n_components=config['pca']['n_components'],data=all_points)
+    
+    all_points = get_tsne(n_components=config['tsne']['n_components'],data=all_points)
+
+    clf, pred = get_clusters(data=all_points,store_centers='medoid',classifier='hdbscan')
+    
     start = time.time()
-    all_points = tsne.fit_transform(all_points)
-    end = time.time()
-    print(f'Dimesnion after TSNE {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
-    clf = HDBSCAN(min_cluster_size=2,n_jobs=-1,store_centers='medoid')
-    start = time.time()
-    pred_val = clf.fit_predict(all_points)
-    num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
-    print(pred_val.tolist().count(-1))
-    print(num_clusters)
-    end = time.time()
-    print(f'Clustering validation dataset took {end-start} seconds')
-    start = time.time()
-    dbcv_val = DBCV(all_points,pred_val)
-    print(dbcv_val)
+    dbcv_score = DBCV(all_points,pred)
+    print(f"DBCV score is {dbcv_score}")
     end = time.time()
     print(f'DBCV took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours for test dataset')
         

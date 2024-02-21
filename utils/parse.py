@@ -199,9 +199,11 @@ def get_tsne(n_components:int,data:np.ndarray):
     print(f'Dimesnion after TSNE {data.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
     return data
 
-def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',):
+def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',eps:float=0.5,min_samples:int=5):
     if classifier == 'hdbscan':
-        clf = HDBSCAN(min_cluster_size=5,allow_single_cluster=True,n_jobs=-1,store_centers=store_centers)
+        clf = HDBSCAN(min_cluster_size=min_samples,n_jobs=-1,store_centers=store_centers)
+    elif classifier == 'dbscan':
+        clf = DBSCAN(eps=eps,min_samples=min_samples,n_jobs=-1)
     else:
         raise Exception(f"{classifier} not implemented")
     start = time.time()
