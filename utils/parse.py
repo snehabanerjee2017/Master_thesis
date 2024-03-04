@@ -208,10 +208,11 @@ def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hd
         raise Exception(f"{classifier} not implemented")
     start = time.time()
     pred_val = clf.fit_predict(data)
-    num_clusters = num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
+    num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
+    print(f'The value of min_cluster_size is {min_samples}')
     print(f"Number of outliers {pred_val.tolist().count(-1)}")
     print(f"Number of clusters excluding outliers {num_clusters}")
     end = time.time()
     print(f'Clustering validation dataset took {end-start} seconds')
 
-    return clf, pred_val
+    return clf, pred_val, num_clusters

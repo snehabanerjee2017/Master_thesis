@@ -5,19 +5,19 @@ dataset:
   train_val_percent: 0.85
   train_test_split: 0.95
 model:
-  path: "/home/das-sb/GIT/source_library/log/PointNet/2024-02-08_15-54/sinkhorn/PointNet/checkpoints/self_best_model.pth"
+  path: "/home/das-sb/GIT/source_library/log/PointNet/2024-02-22_12-03/sinkhorn/PointNet/checkpoints/self_best_model.pth"
   name: "BYOL"
   proj_dim: 256
   tau: 0.01
   K: 64
   angle: 0.0
   md: "pn"
-  crop: [1.0, 1.0]
+  crop: [0.85, 0.85]
   dims: 1024
   neighs: 20
 util:
-  gpu: 1
-  workers: 8 
+  gpu: 0
+  workers: 8
 training:
   train: True
   unsup: True
@@ -38,9 +38,9 @@ training:
   cb: False
   return_embedding: True
 pca:
-  n_components: 50
-tsne:
-  n_components: 2
+  n_components: 512
+pca_2:
+  n_components: 154
 results:
   dir_path: "/mnt/data/das-sb/results"
 

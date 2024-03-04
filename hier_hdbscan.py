@@ -45,31 +45,35 @@ print(f'Dimension of dataset embedding {emb_all_points.shape}')
 
 emb_all_points = get_pca(n_components=config['pca']['n_components'],data=emb_all_points)
 
-emb_all_points = get_tsne(n_components=config['tsne']['n_components'], data=emb_all_points)
+emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=emb_all_points)
 
-clus_size = [1000,3000,5000,6000]
-for min_sample in clus_size:
-    clf, pred = get_clusters(data = emb_all_points,store_centers = 'medoid', classifer='hdbscan',min_samples=min_sample)
+while True:
+    clf, pred, num_clusters = get_clusters(data = emb_all_points,store_centers = 'medoid', classifer='hdbscan')
+        
 
-# with open(os.path.join(config['results']['dir_path'],'all_medoids.npy'), 'wb') as f:
-#     np.save(f, clf.medoids_)
-# all_medoids = np.load(os.path.join(config['results']['dir_path'],'all_medoids.npy'))
+    with open(os.path.join(config['results']['dir_path'],'all_medoids.npy'), 'wb') as f:
+        np.save(f, clf.medoids_)
+    all_medoids = np.load(os.path.join(config['results']['dir_path'],'all_medoids.npy'))
 
-# all_medoid_indices = []
-# for medoid in tqdm(all_medoids):
-#     if medoid in emb_all_points:
-#         all_medoid_indices.append(np.where(emb_all_points==medoid)[0][0])
-#     else:
-#         raise Exception(f'medoid {medoid} not found in embedding of all points')
-    
-# all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
-# print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
+    all_medoid_indices = []
+    for medoid in tqdm(all_medoids):
+        if medoid in emb_all_points:
+            all_medoid_indices.append(np.where(emb_all_points==medoid)[0][0])
+        else:
+            raise Exception(f'medoid {medoid} not found in embedding of all points')
+        
+    all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
+    print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
 
-# with open(os.path.join(config['results']['dir_path'],'all_rep_emb.npy'), 'wb') as f:
-#     np.save(f, all_rep_emb)
+    with open(os.path.join(config['results']['dir_path'],'all_rep_emb.npy'), 'wb') as f:
+        np.save(f, all_rep_emb)
 
-# all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
-# print(f'Dimension of all representative  objects {all_rep_objects.shape}')
+    all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
+    print(f'Dimension of all representative  objects {all_rep_objects.shape}')
 
-# with open(os.path.join(config['results']['dir_path'],'all_rep_objects.npy'), 'wb') as f:
-#     np.save(f, all_rep_objects)
+    with open(os.path.join(config['results']['dir_path'],'all_rep_objects.npy'), 'wb') as f:
+        np.save(f, all_rep_objects)
+    if num_clusters<=175:
+        break
+    else:
+        emb_all_points = all_rep_emb
