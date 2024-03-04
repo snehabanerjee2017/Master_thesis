@@ -12,7 +12,7 @@ model:
   K: 64
   angle: 0.0
   md: "pn"
-  crop: [1.0, 1.0]
+  crop: [0.85, 0.85]
   dims: 1024
   neighs: 20
 util:
@@ -38,9 +38,9 @@ training:
   cb: False
   return_embedding: True
 pca:
-  n_components: 50
-tsne:
-  n_components: 2
+  n_components: 512
+pca_2:
+  n_components: 154
 dbcv:
   num_points: 1000
   

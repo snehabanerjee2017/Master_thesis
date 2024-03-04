@@ -1,23 +1,10 @@
-import datetime
-import logging
-import sys
-from pathlib import Path
 import time
-
 import numpy as np
 import torch
 torch.cuda.is_available()
-import os
-# print(torch.cuda.get_device_name(1))
-from tensorboardX import SummaryWriter
 from tqdm import tqdm
-from lib.dbscan_utils import validate
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 from utils.parse import parse_args, load_model, get_clusters, get_pca, get_tsne
 from dataset.dataloader import data_loader
-from sklearn.cluster import DBSCAN, HDBSCAN
-from scipy.spatial.distance import directed_hausdorff
 from DBCV.DBCV_multiproc import DBCV
 # from DBCV.DBCV import DBCV
 
@@ -40,16 +27,16 @@ with torch.cuda.device(config['util']['gpu']):
     all_points = np.take(all_points, np.random.choice(np.array(list(range(0,all_points.shape[0]))), config['dbcv']['num_points'], replace=False), axis=0, out=None, mode='raise')
     end = time.time()
     print(f'Dimension of dataset {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
-    start = time.time()
+    
     all_points = get_pca(n_components=config['pca']['n_components'],data=all_points)
     
-    all_points = get_tsne(n_components=config['tsne']['n_components'],data=all_points)
+    all_points = get_pca(n_components=config['pca_2']['n_components'],data=all_points)
 
-    clf, pred = get_clusters(data=all_points,store_centers='medoid',classifier='hdbscan')
+    clf, pred, num_clusters = get_clusters(data=all_points,store_centers='medoid',classifier='hdbscan',min_samples=2)
     
     start = time.time()
     dbcv_score = DBCV(all_points,pred)
     print(f"DBCV score is {dbcv_score}")
     end = time.time()
-    print(f'DBCV took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours for test dataset')
+    print(f'DBCV took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours for {all_points.shape[0]} datapoints')
         
