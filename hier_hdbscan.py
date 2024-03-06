@@ -48,7 +48,7 @@ emb_all_points = get_pca(n_components=config['pca']['n_components'],data=emb_all
 emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=emb_all_points)
 
 while True:
-    clf, pred, num_clusters = get_clusters(data = emb_all_points,store_centers = 'medoid', classifer='hdbscan')
+    clf, pred, num_clusters = get_clusters(data = emb_all_points,store_centers = 'medoid', classifier='hdbscan')
         
 
     with open(os.path.join(config['results']['dir_path'],'all_medoids.npy'), 'wb') as f:
