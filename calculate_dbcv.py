@@ -5,7 +5,8 @@ torch.cuda.is_available()
 from tqdm import tqdm
 from utils.parse import parse_args, load_model, get_clusters, get_pca, get_tsne
 from dataset.dataloader import data_loader
-from DBCV.DBCV_multiproc import DBCV
+# from DBCV.DBCV_multiproc import DBCV
+from DBCV.DBCV_neighbor import DBCV
 # from DBCV.DBCV import DBCV
 
 config = parse_args()
@@ -23,8 +24,8 @@ with torch.cuda.device(config['util']['gpu']):
     del ema_net
     del test_data_loader
     all_points = np.concatenate(all_points,axis=0)
-    np.random.seed(42)
-    all_points = np.take(all_points, np.random.choice(np.array(list(range(0,all_points.shape[0]))), config['dbcv']['num_points'], replace=False), axis=0, out=None, mode='raise')
+    # np.random.seed(42)
+    # all_points = np.take(all_points, np.random.choice(np.array(list(range(0,all_points.shape[0]))), config['dbcv']['num_points'], replace=False), axis=0, out=None, mode='raise')
     end = time.time()
     print(f'Dimension of dataset {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
     
