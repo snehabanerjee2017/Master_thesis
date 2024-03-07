@@ -25,7 +25,7 @@ training:
   is_recon: True
   normal: False
   log_dir: "PointNet"
-  batch_size: 128
+  batch_size: 64
   epoch: 200
   learning_rate: 0.001
   lr_decay: 0.5
@@ -43,6 +43,9 @@ pca_2:
   n_components: 154
 results:
   dir_path: "/mnt/data/das-sb/results"
+  classifier: "agglomerative"
+  n_clusters: 175
+  chunk_size: 100000
 
   
 
