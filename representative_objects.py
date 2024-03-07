@@ -4,7 +4,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.is_available()
 import os
 from tqdm import tqdm
-from utils.parse import parse_args, load_model, get_pca, get_tsne, get_clusters
+from utils.parse import parse_args, load_model, get_pca, get_tsne, get_clusters, get_medoids
 from dataset.dataloader import data_loader
 import gc   
 
@@ -43,36 +43,45 @@ emb_all_points = np.concatenate(emb_all_points,axis=0)
 print(f'Dimension of dataset {all_points.shape}')
 print(f'Dimension of dataset embedding {emb_all_points.shape}')
 
-emb_all_points = get_pca(n_components=config['pca']['n_components'],data=emb_all_points)
+red_emb_all_points = get_pca(n_components=config['pca']['n_components'],data=np.copy(emb_all_points))
 
-emb_all_points = get_tsne(n_components=config['pca_2']['n_components'], data=emb_all_points)
+red_emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=red_emb_all_points)
 
-classifiers = ['hdbscan','kmedoids']
-for classifier in classifiers:
-    clf, pred = get_clusters(data = emb_all_points,store_centers = 'medoid', classifer=classifier)
+clf, pred, num_clusters = get_clusters(data = red_emb_all_points,store_centers = 'medoid', classifier=config["results"]["classifier"],n_clusters=config['results']['n_clusters'])
 
-    with open(os.path.join(config['results']['dir_path'],f'all_medoids_{classifier}.npy'), 'wb') as f:
-        if classifier == 'kmedoids' or 'kmeans':
-            np.save(f, clf.cluster_centers_)
-        elif classifier == 'hdbscan' or 'dbscan':
-            np.save(f, clf.medoids_)
-    all_medoids = np.load(os.path.join(config['results']['dir_path'],f'all_medoids_{classifier}.npy'))
+with open(os.path.join(config['results']['dir_path'],f'all_medoids_{config["results"]["classifier"]}.npy'), 'wb') as f:
+    if config["results"]["classifier"] == 'kmedoids' or 'kmeans':
+        np.save(f, clf.cluster_centers_)
+    elif config["results"]["classifier"] == 'hdbscan' or 'dbscan':
+        np.save(f, clf.medoids_)
+    elif config["results"]["classifier"] == 'agglomerative' or 'spectral':
+        np.save(f, get_medoids(data=all_points,pred_labels=pred))
+all_medoids = np.load(os.path.join(config['results']['dir_path'],f'all_medoids_{config["results"]["classifier"]}.npy'))
 
+if config["results"]["classifier"] == 'agglomerative' or 'spectral':
     all_medoid_indices = []
     for medoid in tqdm(all_medoids):
-        if medoid in emb_all_points:
-            all_medoid_indices.append(np.where(emb_all_points==medoid)[0][0])
+        if medoid in all_points:
+            all_medoid_indices.append(np.where(all_points==medoid)[0][0])
         else:
             raise Exception(f'medoid {medoid} not found in embedding of all points')
-        
-    all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
-    print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
+else:
+    all_medoid_indices = []
+    for medoid in tqdm(all_medoids):
+        if medoid in red_emb_all_points:
+            all_medoid_indices.append(np.where(red_emb_all_points==medoid)[0][0])
+        else:
+            raise Exception(f'medoid {medoid} not found in embedding of all points')
+    
+all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
+print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
 
-    with open(os.path.join(config['results']['dir_path'],f'all_rep_emb_{classifier}.npy'), 'wb') as f:
-        np.save(f, all_rep_emb)
+with open(os.path.join(config['results']['dir_path'],f'all_rep_emb_{config["results"]["classifier"]}.npy'), 'wb') as f:
+    np.save(f, all_rep_emb)
 
-    all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
-    print(f'Dimension of all representative  objects {all_rep_objects.shape}')
+all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
+print(f'Dimension of all representative  objects {all_rep_objects.shape}')
 
-    with open(os.path.join(config['results']['dir_path'],f'all_rep_objects_{classifier}.npy'), 'wb') as f:
-        np.save(f, all_rep_objects)
+with open(os.path.join(config['results']['dir_path'],f'all_rep_objects_{config["results"]["classifier"]}.npy'), 'wb') as f:
+    np.save(f, all_rep_objects)
+    

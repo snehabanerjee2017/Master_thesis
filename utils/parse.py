@@ -10,8 +10,10 @@ from tensorboardX import SummaryWriter
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from sklearn.cluster import DBSCAN, HDBSCAN, KMeans
-
+from sklearn.cluster import DBSCAN, HDBSCAN, KMeans, AgglomerativeClustering, SpectralClustering
+from sklearn_extra.cluster import KMedoids
+from multiprocessing import Pool,cpu_count
+from functools import partial
 
 def parse_args():
     """PARAMETERS"""
@@ -199,20 +201,85 @@ def get_tsne(n_components:int,data:np.ndarray):
     print(f'Dimesnion after TSNE {data.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
     return data
 
-def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',eps:float=0.5,min_samples:int=5):
+def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',eps:float=0.5,min_samples:int=5,n_clusters:int=175):
     if classifier == 'hdbscan':
         clf = HDBSCAN(min_cluster_size=min_samples,n_jobs=-1,store_centers=store_centers)
-    elif classifier == 'dbscan':
-        clf = DBSCAN(eps=eps,min_samples=min_samples,n_jobs=-1)
+    # elif classifier == 'dbscan':
+    #     clf = DBSCAN(eps=eps,min_samples=min_samples,n_jobs=-1)
+    # elif classifier == 'kmeans':
+    #     clf = KMeans(n_clusters=n_clusters,random_state=42,init='k-means++')
+    elif classifier == 'kmedoids':
+        clf = KMedoids(n_clusters=n_clusters,random_state=42,init='k-medoids++')
+    elif classifier == 'agglomerative':
+        clf = AgglomerativeClustering(n_clusters = 175)
+    elif classifier == 'spectral':
+        clf = SpectralClustering(n_clusters=n_clusters,random_state=42,assign_labels='cluster_qr')
     else:
         raise Exception(f"{classifier} not implemented")
     start = time.time()
     pred_val = clf.fit_predict(data)
-    num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
-    print(f'The value of min_cluster_size is {min_samples}')
-    print(f"Number of outliers {pred_val.tolist().count(-1)}")
+    if classifier == 'kmeans' or 'kmedoids' or 'agglomerative' or 'spectral':
+        num_clusters=n_clusters
+    else:
+        num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
+        print(f'The value of min_cluster_size is {min_samples}')
+        print(f"Number of outliers {pred_val.tolist().count(-1)}")    
+    
     print(f"Number of clusters excluding outliers {num_clusters}")
     end = time.time()
     print(f'Clustering validation dataset took {end-start} seconds')
 
     return clf, pred_val, num_clusters
+
+def calculate_medoid(cluster_points):
+    """
+    Function to calculate the medoid of a cluster.
+    """
+    num_points = len(cluster_points)
+    distances = np.zeros((num_points, num_points))
+    
+    # Calculate pairwise distances between points
+    for i in range(num_points):
+        for j in range(i+1, num_points):
+            distances[i][j] = distances[j][i] = directed_hausdorff(cluster_points[i], cluster_points[j])[0]
+    
+    # Calculate total distance for each point
+    total_distances = np.sum(distances, axis=0)
+    
+    # Find index of point with minimum total distance
+    medoid_index = np.argmin(total_distances)
+    
+    return cluster_points[medoid_index]
+
+def calc_medoid(clusters,all_points,pred_val):
+
+    medoid_dict = {cluster: None for cluster in clusters}    
+    for cluster in clusters:
+        idx = (pred_val == cluster).nonzero()[0]
+        cluster_points = np.take(all_points,idx,axis=0)
+        medoid_dict[cluster] = calculate_medoid(cluster_points)
+
+    return medoid_dict
+
+def get_medoids(data:np.ndarray,pred_labels:np.ndarray):
+    start = time.time()
+    clusters = np.unique(pred_labels).tolist()
+    processes = cpu_count()
+    chunk_size = len(clusters)//processes + 1
+
+    chunks = [clusters[i:i+chunk_size] for i in range(0,len(clusters),chunk_size)]
+    g = partial(calc_medoid,all_points = data,pred_val=pred_labels)
+
+    with Pool(processes) as p:
+        res = p.map(g,chunks)
+
+    result = {}
+    for ele in res:
+        result.update(ele)
+
+    medoids = np.array(list(result.values()))
+    end = time.time()
+
+    print(f'medoid calculation for dataset dimension {data.shape} took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
+
+    return medoids
