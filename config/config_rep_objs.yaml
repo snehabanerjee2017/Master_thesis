@@ -16,7 +16,7 @@ model:
   dims: 1024
   neighs: 20
 util:
-  gpu: 0
+  gpu: 1
   workers: 8
 training:
   train: True
@@ -41,11 +41,14 @@ pca:
   n_components: 512
 pca_2:
   n_components: 154
+tsne:
+  n_components: 2
 results:
   dir_path: "/mnt/data/das-sb/results"
-  classifier: "agglomerative"
+  classifier: "hdbscan"
   n_clusters: 175
   chunk_size: 100000
+  min_samples: 2
 
   
 
