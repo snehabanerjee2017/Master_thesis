@@ -218,7 +218,7 @@ def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hd
         raise Exception(f"{classifier} not implemented")
     start = time.time()
     pred_val = clf.fit_predict(data)
-    if classifier == 'kmeans' or 'kmedoids' or 'agglomerative' or 'spectral':
+    if classifier in ['kmeans', 'kmedoids', 'agglomerative','spectral']:
         num_clusters=n_clusters
     else:
         num_clusters = len(set(pred_val)) - (1 if -1 in pred_val else 0)  # excluding outliers
@@ -257,6 +257,7 @@ def calc_medoid(clusters,all_points,pred_val):
     for cluster in clusters:
         idx = (pred_val == cluster).nonzero()[0]
         cluster_points = np.take(all_points,idx,axis=0)
+        print(f'Number of points in cluster {cluster} is {len(cluster_points)}')
         medoid_dict[cluster] = calculate_medoid(cluster_points)
 
     return medoid_dict
