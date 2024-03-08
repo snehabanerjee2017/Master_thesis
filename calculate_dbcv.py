@@ -24,16 +24,19 @@ with torch.cuda.device(config['util']['gpu']):
     del ema_net
     del test_data_loader
     all_points = np.concatenate(all_points,axis=0)
-    # np.random.seed(42)
-    # all_points = np.take(all_points, np.random.choice(np.array(list(range(0,all_points.shape[0]))), config['dbcv']['num_points'], replace=False), axis=0, out=None, mode='raise')
     end = time.time()
+    np.random.seed(42)
+    all_points = np.take(all_points, np.random.choice(np.array(list(range(0,all_points.shape[0]))), config['dbcv']['num_points'], replace=False), axis=0, out=None, mode='raise')
+    
     print(f'Dimension of dataset {all_points.shape} and it takes {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
     
     all_points = get_pca(n_components=config['pca']['n_components'],data=all_points)
     
-    all_points = get_pca(n_components=config['pca_2']['n_components'],data=all_points)
+    # all_points = get_pca(n_components=config['pca_2']['n_components'],data=all_points)
 
-    clf, pred, num_clusters = get_clusters(data=all_points,store_centers='medoid',classifier='hdbscan',min_samples=2)
+    all_points = get_tsne(n_components=config['tsne']['n_components'], data=all_points)
+
+    clf, pred, num_clusters = get_clusters(data=all_points,store_centers='medoid',classifier=config['results']['classifier'],min_samples=2)
     
     start = time.time()
     dbcv_score = DBCV(all_points,pred)

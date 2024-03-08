@@ -41,7 +41,11 @@ pca:
   n_components: 512
 pca_2:
   n_components: 154
+tsne:
+  n_components: 2
 dbcv:
   num_points: 1000
+results:
+  classifier: 'hdbscan'
   
 
