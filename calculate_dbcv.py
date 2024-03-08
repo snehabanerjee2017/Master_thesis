@@ -5,8 +5,8 @@ torch.cuda.is_available()
 from tqdm import tqdm
 from utils.parse import parse_args, load_model, get_clusters, get_pca, get_tsne
 from dataset.dataloader import data_loader
-# from DBCV.DBCV_multiproc import DBCV
-from DBCV.DBCV_neighbor import DBCV
+from DBCV.DBCV_multiproc import DBCV
+# from DBCV.DBCV_neighbor import DBCV
 # from DBCV.DBCV import DBCV
 
 config = parse_args()
@@ -36,7 +36,7 @@ with torch.cuda.device(config['util']['gpu']):
 
     all_points = get_tsne(n_components=config['tsne']['n_components'], data=all_points)
 
-    clf, pred, num_clusters = get_clusters(data=all_points,store_centers='medoid',classifier=config['results']['classifier'],min_samples=2)
+    clf, pred, num_clusters = get_clusters(data=all_points,store_centers='medoid',classifier=config['results']['classifier'],min_samples=2,n_clusters=config['results']['n_clusters'],batch_size=config['results']['chunk_size'])
     
     start = time.time()
     dbcv_score = DBCV(all_points,pred)

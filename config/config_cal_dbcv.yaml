@@ -44,8 +44,10 @@ pca_2:
 tsne:
   n_components: 2
 dbcv:
-  num_points: 1000
+  num_points: 2000
 results:
   classifier: 'hdbscan'
+  n_clusters: 175
+  chunk_size: 50000
   
 
