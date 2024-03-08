@@ -207,7 +207,7 @@ def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hd
     # elif classifier == 'dbscan':
     #     clf = DBSCAN(eps=eps,min_samples=min_samples,n_jobs=-1)
     elif classifier == 'kmeans':
-        clf = MiniBatchKMeans(n_clusters=n_clusters,random_state=42,init='k-means++',batch_size=batch_size)
+        clf = MiniBatchKMeans(n_clusters=n_clusters,random_state=42,init='k-means++',batch_size=batch_size,n_init=1)
     # elif classifier == 'kmedoids':
     #     clf = KMedoids(n_clusters=n_clusters,random_state=42,init='k-medoids++')
     elif classifier == 'agglomerative':

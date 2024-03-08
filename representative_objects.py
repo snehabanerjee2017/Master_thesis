@@ -49,14 +49,16 @@ red_emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=
 
 if config["results"]["classifier"] in ['agglomerative', 'spectral']:
 
-    emb_chunks = [red_emb_all_points[i:i+config['results']['chunk_size']] for i in range(0,len(red_emb_all_points),config['results']['chunk_size'])]
+    red_emb_chunks = [red_emb_all_points[i:i+config['results']['chunk_size']] for i in range(0,len(red_emb_all_points),config['results']['chunk_size'])]
+    emb_chunks = [emb_all_points[i:i+config['results']['chunk_size']] for i in range(0,len(emb_all_points),config['results']['chunk_size'])]
     obj_chunks = [all_points[i:i+config['results']['chunk_size']] for i in range(0,len(all_points),config['results']['chunk_size'])]
 
     medoids = []
+    red_embs = []
     embs = []
     objs = []
-    for emb_chunk, obj_chunk in tqdm(zip(emb_chunks,obj_chunks), total=len(emb_chunks), smoothing=0.9,desc = 'Chunk of entire dataset'):
-        clf, pred, num_clusters = get_clusters(data = emb_chunk,store_centers = 'medoid', classifier=config["results"]["classifier"],n_clusters=config['results']['n_clusters'])
+    for red_emb_chunk, emb_chunk, obj_chunk in tqdm(zip(red_emb_chunks,emb_chunks,obj_chunks), total=len(red_emb_chunks), smoothing=0.9,desc = 'Chunk of entire dataset'):
+        clf, pred, num_clusters = get_clusters(data = red_emb_chunk,store_centers = 'medoid', classifier=config["results"]["classifier"],n_clusters=config['results']['n_clusters'])
 
         with open(os.path.join(config['results']['dir_path'],f'all_medoids_{config["results"]["classifier"]}.npy'), 'wb') as f:
             np.save(f, get_medoids(data=obj_chunk,pred_labels=pred))
@@ -74,6 +76,10 @@ if config["results"]["classifier"] in ['agglomerative', 'spectral']:
         print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
         embs.extend(all_rep_emb)
 
+        all_red_rep_emb = np.take(red_emb_chunk,all_medoid_indices,axis=0)
+        print(f'Dimension of embedding of all representative  objects {all_red_rep_emb.shape}')
+        red_embs.extend(all_red_rep_emb)
+
         with open(os.path.join(config['results']['dir_path'],f'all_rep_emb_{config["results"]["classifier"]}.npy'), 'wb') as f:
             np.save(f, all_rep_emb)
 
@@ -86,13 +92,15 @@ if config["results"]["classifier"] in ['agglomerative', 'spectral']:
 
     medoids = np.array(medoids)
     embs = np.array(embs)
+    red_embs = np.array(red_embs)
     objs = np.array(objs)
 
     print(f'medoids shape is {medoids.shape}')
-    print(f'embeddings shape is {embs.shape}')
+    print(f'Embedding embeddings shape is {embs.shape}')
+    print(f'Reduced embedding embeddings shape is {red_embs.shape}')
     print(f'objects shape is {objs.shape}')
 
-    clf, pred, num_clusters = get_clusters(data = embs,store_centers = 'medoid', classifier=config["results"]["classifier"],n_clusters=config['results']['n_clusters'])
+    clf, pred, num_clusters = get_clusters(data = red_embs,store_centers = 'medoid', classifier=config["results"]["classifier"],n_clusters=config['results']['n_clusters'])
 
     with open(os.path.join(config['results']['dir_path'],f'all_medoids_{config["results"]["classifier"]}.npy'), 'wb') as f:
         np.save(f, get_medoids(data=objs,pred_labels=pred))
@@ -131,7 +139,7 @@ elif config["results"]["classifier"] in ['kmeans']:
                 all_medoid_indices.append(np.where(all_points==medoid)[0][0])
             else:
                 raise Exception(f'medoid {medoid} not found in embedding of all points')
-        all_rep_emb = np.take(red_emb_all_points,all_medoid_indices,axis=0)
+        all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
         print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
 
         with open(os.path.join(config['results']['dir_path'],f'all_rep_emb_{config["results"]["classifier"]}.npy'), 'wb') as f:
