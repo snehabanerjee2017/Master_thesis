@@ -202,6 +202,7 @@ def get_tsne(n_components:int,data:np.ndarray):
     return data
 
 def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hdbscan',eps:float=0.5,min_samples:int=5,n_clusters:int=175,batch_size:int=50000):
+    print(f'{classifier} Clustering')
     if classifier == 'hdbscan':
         clf = HDBSCAN(min_cluster_size=min_samples,n_jobs=-1,store_centers=store_centers)
     # elif classifier == 'dbscan':
