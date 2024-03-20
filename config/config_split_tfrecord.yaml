@@ -1,0 +1,5 @@
+root: "/mnt/data/das-sb/dataset_hdf5_processed"
+train_test_split: 0.95
+train_val_percent: 0.85
+tfrecord_folder: "/mnt/data/mvoe/tfrecords"
+num_points: 2048
