@@ -7,7 +7,18 @@ from dataset.abc import _load_data_file
 from utils.parse import parse_args
 
 def write_tfrecord(filename, points):
-    with tf.io.TFRecordWriter(filename) as writer:
+    options = tf.io.TFRecordOptions(
+            compression_type='ZLIB',
+            flush_mode=None,
+            input_buffer_size=None,
+            output_buffer_size=None,
+            window_bits=None,
+            compression_level=None,
+            compression_method=None,
+            mem_level=None,
+            compression_strategy=None
+        )
+    with tf.io.TFRecordWriter(filename,options=options) as writer:
         for point in points:
             example = tf.train.Example(features=tf.train.Features(feature={
                 'points': tf.train.Feature(float_list=tf.train.FloatList(value=point.reshape(-1)))
