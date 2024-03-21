@@ -53,38 +53,36 @@ with torch.cuda.device(config['util']['gpu']):
     while True:
         if count!=0:
             clf, pred, num_clusters = get_clusters(data = rel_points,store_centers = 'medoid', classifier=config['results']['classifier'],min_samples=config['results']['min_samples']) 
-            for i, label in enumerate(pred):
-                if label==-1:
-                    prev_label = original_clusters[np.where(all_points==rel_points[i])[0][0]]
-                    pred[i] = prev_label
-                    # original_clusters[np.where(all_points==rel_points[i])[0][0]] = -1
         all_medoids = clf.medoids_
 
         print(all_medoids.shape)
+        cluster_pointer = num_clusters 
+        if count!=0:
+            for i, label in enumerate(pred):
+                if label==-1:
+                    for j, cluster in enumerate(clusters[1:]):
+                        cluster_members = original_cluster_members[j]
+                        if np.any(cluster_members==rel_points[i]):
+                            for member in cluster_members:
+                                idx =  np.where(all_points==member)[0][0] 
+                                original_clusters[idx] = cluster_pointer
+                            cluster_pointer+=1
+                            break
+        for j, point in enumerate(rel_points):
+            if pred[j]!=-1:
+                for i, cluster in enumerate(clusters[1:]):
+                    cluster_members = original_cluster_members[i]
+                    if np.any(cluster_members==point):
+                        idx_point = np.where(rel_points==point)[0][0]
+                        label_point = pred[idx_point]
+                            
+                        for member in cluster_members:
+                            idx =  np.where(all_points==member)[0][0] 
+                            original_clusters[idx] = label_point
+                        break
+        print(f'Now number of clusters are {len(np.unique(original_clusters).tolist())}') 
+        print(original_clusters)
 
-
-        for point in rel_points:
-            for i, cluster in enumerate(clusters[1:]):
-                cluster_members = original_cluster_members[i]
-                if np.any(cluster_members==point):
-                    idx_point = np.where(rel_points==point)[0][0]
-                    label_point = pred[idx_point]
-                        
-                    for member in cluster_members:
-                        idx =  np.where(all_points==member)[0][0] 
-                        original_clusters[idx] = label_point
-                    break
-        print(f'Now number of clusters are {len(np.unique(original_clusters).tolist())}')  
-        
-        cluster_pointer = num_clusters
-        all_clusters = sorted(np.unique(original_clusters).tolist())
-        for cluster in all_clusters:
-            if cluster>num_clusters:
-                idx = (original_clusters == cluster).nonzero()[0]
-                for id in idx:
-                    original_clusters[id] = cluster_pointer
-                cluster_pointer+=1
-        
         start = time.time()
         dbcv_score = DBCV(all_points,original_clusters)
         print(f"DBCV score is {dbcv_score}")
