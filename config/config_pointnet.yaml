@@ -1,0 +1,15 @@
+batch_size: 128
+num_points: 2048
+weights_path: "/mnt/data/das-sb/pointnet_autoencoder/checkpoints/202209280824_model1_2048_64_newloss_better_continued_poissondisk_lossx10/weights_011.h5"
+
+tsne:
+  n_components: 2
+
+dbcv:
+  num_points: 1000
+
+results:
+  classifier: 'agglomerative'
+  n_clusters: 175
+  chunk_size: 50000
+  min_samples: 2
