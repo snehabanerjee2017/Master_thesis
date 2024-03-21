@@ -212,7 +212,7 @@ def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hd
     # elif classifier == 'kmedoids':
     #     clf = KMedoids(n_clusters=n_clusters,random_state=42,init='k-medoids++')
     elif classifier == 'agglomerative':
-        clf = AgglomerativeClustering(n_clusters = 175)
+        clf = AgglomerativeClustering(n_clusters = n_clusters)
     elif classifier == 'spectral':
         clf = SpectralClustering(n_clusters=n_clusters,random_state=42,assign_labels='cluster_qr')
     else:
