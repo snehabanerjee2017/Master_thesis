@@ -248,6 +248,7 @@ def calc_dbcv(data:np.ndarray, labels:np.ndarray):
 def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, clusters:list, cluster_members:list, rel_points: np.ndarray, min_samples:int = 2, classifier = 'hdbscan',count:int=0):
 
     if count!=0:
+        print(f' Number of points to be clustered are {rel_points.shape[0]}')
         clf, pred, num_clusters = get_clusters(data = rel_points,store_centers = 'medoid', classifier=classifier,min_samples=min_samples) 
     all_medoids = clf.medoids_
 
@@ -256,8 +257,10 @@ def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, 
     if count!=0:
         cluster_pointer = num_clusters
         # No new outliers from label 2
+        outlier_idx_list = []
         for point_idx, point in enumerate(rel_points):
             if pred[point_idx]<0:
+                outlier_idx_list.append(point_idx)
                 for members in cluster_members:
                     if np.any(members==point):
                         for member in members:
@@ -273,14 +276,17 @@ def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, 
                             original_clusters[idx] = pred[point_idx]
                         break
         
+        outliers = np.take(rel_points,outlier_idx_list,axis=0)
         clusters = np.unique(original_clusters).tolist()
 
-        # reassign outliers of previous level
-        for cluster in clusters:
-            if cluster>cluster_pointer:
-                idx = (original_clusters == cluster).nonzero()[0]
-                original_clusters[idx] = cluster_pointer
-                cluster_pointer+=1
+        # not needed as outliers from level 2 onwards are forced to stay as relevant points
+        # # reassign outliers of previous level
+        # for cluster in clusters:
+        #     if cluster>cluster_pointer:
+        #         print(f'Enters reassignment loop')
+        #         idx = (original_clusters == cluster).nonzero()[0]
+        #         original_clusters[idx] = cluster_pointer
+        #         cluster_pointer+=1
 
         cluster_members = []
         for cluster in clusters:
@@ -294,6 +300,10 @@ def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, 
 
     rel_points = np.take(rel_points,all_medoid_indices,axis=0)
     print(f'Dimension of embedding of all representative  objects {rel_points.shape}')
+    if count!=0:
+        rel_points = np.concatenate((rel_points,outliers), axis = 0)
+
+        print(f'Dimension of embedding of all representative  objects including outliers {rel_points.shape}')
 
     if count==0:
         num_clusters = len(np.unique(original_clusters).tolist())
