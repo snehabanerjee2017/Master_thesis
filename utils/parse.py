@@ -252,32 +252,36 @@ def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, 
     all_medoids = clf.medoids_
 
     print(all_medoids.shape)
-     
+    
     if count!=0:
         cluster_pointer = num_clusters
         # No new outliers from label 2
-        for i, label in enumerate(pred):
-            if label==-1:
-                for j, cluster in enumerate(clusters[1:]):
-                    members = cluster_members[j]
-                    if np.any(members==rel_points[i]):
+        for point_idx, point in enumerate(rel_points):
+            if pred[point_idx]<0:
+                for members in cluster_members:
+                    if np.any(members==point):
                         for member in members:
                             idx =  np.where(all_points==member)[0][0] 
                             original_clusters[idx] = cluster_pointer
                         cluster_pointer+=1
                         break
-
-        # reassign all members of the original clusters
-        for j, point in enumerate(rel_points):
-            if pred[j]!=-1:
-                for i, cluster in enumerate(clusters[1:]):
-                    members = cluster_members[i]
+            elif pred[point_idx]>=0:
+                for members in cluster_members:
                     if np.any(members==point):                            
                         for member in members:
                             idx =  np.where(all_points==member)[0][0] 
-                            original_clusters[idx] = pred[j]
+                            original_clusters[idx] = pred[point_idx]
                         break
+        
         clusters = np.unique(original_clusters).tolist()
+
+        # reassign outliers of previous level
+        for cluster in clusters:
+            if cluster>cluster_pointer:
+                idx = (original_clusters == cluster).nonzero()[0]
+                original_clusters[idx] = cluster_pointer
+                cluster_pointer+=1
+
         cluster_members = []
         for cluster in clusters:
             idx = (original_clusters == cluster).nonzero()[0]
