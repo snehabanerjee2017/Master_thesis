@@ -14,6 +14,9 @@ from sklearn.cluster import DBSCAN, HDBSCAN, MiniBatchKMeans, AgglomerativeClust
 from sklearn_extra.cluster import KMedoids
 from multiprocessing import Pool,cpu_count
 from functools import partial
+from DBCV.DBCV_multiproc import DBCV
+# from DBCV.DBCV_neighbor import DBCV
+# from DBCV.DBCV import DBCV
 
 def parse_args():
     """PARAMETERS"""
@@ -232,6 +235,68 @@ def get_clusters(data:np.ndarray,store_centers:str = 'medoid',classifier:str='hd
 
     return clf, pred_val, num_clusters
 
+def calc_dbcv(data:np.ndarray, labels:np.ndarray):
+    start = time.time()
+    dbcv_score = DBCV(data,labels)
+    print(f"DBCV score is {dbcv_score}")
+    end = time.time()
+    print(f'DBCV took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours for {data.shape[0]} datapoints')
+
+    return dbcv_score
+
+
+def get_hier_clusters(clf, all_points:np.ndarray, original_clusters:np.ndarray, clusters:list, cluster_members:list, rel_points: np.ndarray, min_samples:int = 2, classifier = 'hdbscan',count:int=0):
+
+    if count!=0:
+        clf, pred, num_clusters = get_clusters(data = rel_points,store_centers = 'medoid', classifier=classifier,min_samples=min_samples) 
+    all_medoids = clf.medoids_
+
+    print(all_medoids.shape)
+     
+    if count!=0:
+        cluster_pointer = num_clusters
+        # No new outliers from label 2
+        for i, label in enumerate(pred):
+            if label==-1:
+                for j, cluster in enumerate(clusters[1:]):
+                    members = cluster_members[j]
+                    if np.any(members==rel_points[i]):
+                        for member in members:
+                            idx =  np.where(all_points==member)[0][0] 
+                            original_clusters[idx] = cluster_pointer
+                        cluster_pointer+=1
+                        break
+
+        # reassign all members of the original clusters
+        for j, point in enumerate(rel_points):
+            if pred[j]!=-1:
+                for i, cluster in enumerate(clusters[1:]):
+                    members = cluster_members[i]
+                    if np.any(members==point):                            
+                        for member in members:
+                            idx =  np.where(all_points==member)[0][0] 
+                            original_clusters[idx] = pred[j]
+                        break
+        clusters = np.unique(original_clusters).tolist()
+        cluster_members = []
+        for cluster in clusters:
+            idx = (original_clusters == cluster).nonzero()[0]
+            cluster_points = np.take(all_points,idx,axis=0)
+            cluster_members.append(cluster_points)
+        print(f'Now number of clusters are {len(np.unique(original_clusters).tolist())}') 
+        print(f'The number are outliers in level {count} are {original_clusters.tolist().count(-1)}')
+
+    all_medoid_indices = get_medoid_indices(medoids=all_medoids,data=rel_points)
+
+    rel_points = np.take(rel_points,all_medoid_indices,axis=0)
+    print(f'Dimension of embedding of all representative  objects {rel_points.shape}')
+
+    if count==0:
+        num_clusters = len(np.unique(original_clusters).tolist())
+    return rel_points, original_clusters, clusters, cluster_members, num_clusters, clf
+        
+        
+
 def calculate_medoid(cluster_points):
     """
     Function to calculate the medoid of a cluster.
@@ -285,3 +350,15 @@ def get_medoids(data:np.ndarray,pred_labels:np.ndarray):
     print(f'medoid calculation for dataset dimension {data.shape} took {end-start} seconds or {(end-start)/60} minutes or {(end-start)/3600} hours')
 
     return medoids
+
+def get_medoid_indices(medoids:np.ndarray, data:np.ndarray)->list:
+    all_medoid_indices = []
+    for medoid in tqdm(medoids):
+        if medoid in data:
+            all_medoid_indices.append(np.where(data==medoid)[0][0])
+        else:
+            raise Exception(f'medoid {medoid} not found in embedding of all points')
+        
+    return all_medoid_indices
+
+

@@ -4,7 +4,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.is_available()
 import os
 from tqdm import tqdm
-from utils.parse import parse_args, load_model, get_pca, get_tsne, get_clusters
+from utils.parse import parse_args, load_model, get_pca, get_tsne, get_clusters, get_hier_clusters, get_medoid_indices
 from dataset.dataloader import data_loader
 import gc   
 
@@ -45,42 +45,52 @@ print(f'Dimension of dataset embedding {emb_all_points.shape}')
 
 red_emb_all_points = get_pca(n_components=config['pca']['n_components'],data=emb_all_points)
 
-red_emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=red_emb_all_points)
+# red_emb_all_points = get_pca(n_components=config['pca_2']['n_components'], data=red_emb_all_points)
 
-# red_emb_all_points = get_tsne(n_components=config['tsne']['n_components'], data=red_emb_all_points)
+red_emb_all_points = get_tsne(n_components=config['tsne']['n_components'], data=red_emb_all_points)
+
+red_emb_rel_points = red_emb_all_points.copy()
+
+clf, pred, num_clusters = get_clusters(data = red_emb_rel_points,store_centers = 'medoid', classifier=config['results']['classifier'],min_samples=config['results']['min_samples']) 
+original_clusters = pred.copy()
+cluster_members = []
+clusters = np.unique(original_clusters).tolist()
+for cluster in clusters:
+    idx = (original_clusters == cluster).nonzero()[0]
+    cluster_points = np.take(red_emb_all_points,idx,axis=0)
+    cluster_members.append(cluster_points)
+
+count=0
 
 while True:
-    clf, pred, num_clusters = get_clusters(data = red_emb_all_points,store_centers = 'medoid', classifier=config['results']['classifier'],min_samples=config['results']['min_samples'])
-        
+    red_emb_rel_points, original_clusters, num_clusters, clf = get_hier_clusters(clf = clf, all_points=red_emb_all_points,rel_points=red_emb_rel_points,  original_clusters=original_clusters, clusters = clusters, cluster_members=cluster_members, min_samples=config['results']['min_samples'], classifier=config['results']['classifier'],count=count)
 
-    with open(os.path.join(config['results']['dir_path'],f"all_medoids_{config['results']['classifier']}_pca.npy"), 'wb') as f:
+    with open(os.path.join(config['results']['dir_path'],f"all_medoids_{config['results']['classifier']}_tsne.npy"), 'wb') as f:
         np.save(f, clf.medoids_)
-    all_medoids = np.load(os.path.join(config['results']['dir_path'],f"all_medoids_{config['results']['classifier']}_pca.npy"))
+    all_medoids = np.load(os.path.join(config['results']['dir_path'],f"all_medoids_{config['results']['classifier']}_tsne.npy"))
 
-    all_medoid_indices = []
-    for medoid in tqdm(all_medoids):
-        if medoid in red_emb_all_points:
-            all_medoid_indices.append(np.where(red_emb_all_points==medoid)[0][0])
-        else:
-            raise Exception(f'medoid {medoid} not found in embedding of all points')
-        
+    all_medoid_indices = get_medoid_indices(medoids=all_medoids,data=red_emb_all_points)
     all_rep_emb = np.take(emb_all_points,all_medoid_indices,axis=0)
     print(f'Dimension of embedding of all representative  objects {all_rep_emb.shape}')
 
     all_red_rep_emb = np.take(red_emb_all_points,all_medoid_indices,axis=0)
     print(f'Dimension of reduced embedding embedding of all representative  objects {all_red_rep_emb.shape}')
 
-    with open(os.path.join(config['results']['dir_path'],f"all_rep_emb_{config['results']['classifier']}_pca.npy"), 'wb') as f:
+    with open(os.path.join(config['results']['dir_path'],f"all_rep_emb_{config['results']['classifier']}_tsne.npy"), 'wb') as f:
         np.save(f, all_rep_emb)
 
     all_rep_objects = np.take(all_points,all_medoid_indices,axis=0)
     print(f'Dimension of all representative  objects {all_rep_objects.shape}')
 
-    with open(os.path.join(config['results']['dir_path'],f"all_rep_objects_{config['results']['classifier']}_pca.npy"), 'wb') as f:
+    with open(os.path.join(config['results']['dir_path'],f"all_rep_objects_{config['results']['classifier']}_tsne.npy"), 'wb') as f:
         np.save(f, all_rep_objects)
+
     if num_clusters<=config['results']['n_clusters']:
         break
     else:
         emb_all_points = all_rep_emb
         red_emb_all_points = all_red_rep_emb
         all_points = all_rep_objects
+        count+=1
+
+        
