@@ -63,7 +63,7 @@ for cluster in clusters:
 count=0
 
 while True:
-    red_emb_rel_points, original_clusters, num_clusters, clf = get_hier_clusters(clf = clf, all_points=red_emb_all_points,rel_points=red_emb_rel_points,  original_clusters=original_clusters, clusters = clusters, cluster_members=cluster_members, min_samples=config['results']['min_samples'], classifier=config['results']['classifier'],count=count)
+    red_emb_rel_points, original_clusters, clusters, cluster_members, num_clusters, clf = get_hier_clusters(clf = clf, all_points=red_emb_all_points,rel_points=red_emb_rel_points,  original_clusters=original_clusters, clusters = clusters, cluster_members=cluster_members, min_samples=config['results']['min_samples'], classifier=config['results']['classifier'],count=count)
 
     with open(os.path.join(config['results']['dir_path'],f"all_medoids_{config['results']['classifier']}_tsne.npy"), 'wb') as f:
         np.save(f, clf.medoids_)
@@ -84,8 +84,11 @@ while True:
 
     with open(os.path.join(config['results']['dir_path'],f"all_rep_objects_{config['results']['classifier']}_tsne.npy"), 'wb') as f:
         np.save(f, all_rep_objects)
+        
+    total_num_clusters = len(np.unique(original_clusters).tolist())
+    print(f'The total number of clusters including outliers after level {count} are {total_num_clusters}')
 
-    if num_clusters<=config['results']['n_clusters']:
+    if total_num_clusters<=config['results']['n_clusters']:
         break
     else:
         emb_all_points = all_rep_emb

@@ -5,9 +5,6 @@ torch.cuda.is_available()
 from tqdm import tqdm
 from utils.parse import parse_args, load_model, get_clusters, get_pca, get_tsne, get_hier_clusters, calc_dbcv
 from dataset.dataloader import data_loader
-from DBCV.DBCV_multiproc import DBCV
-# from DBCV.DBCV_neighbor import DBCV
-# from DBCV.DBCV import DBCV
 
 config = parse_args()
 test_data_loader = data_loader(config)
@@ -53,7 +50,7 @@ with torch.cuda.device(config['util']['gpu']):
     count=0
 
     while True:
-        rel_points, original_clusters, num_clusters = get_hier_clusters(clf = clf, all_points=all_points,rel_points=rel_points,  original_clusters=original_clusters, clusters = clusters, cluster_members=cluster_members, min_samples=config['results']['min_samples'], classifier=config['results']['classifier'],count=count)
+        rel_points, original_clusters, clusters, cluster_members, num_clusters, clf = get_hier_clusters(clf = clf, all_points=all_points,rel_points=rel_points,  original_clusters=original_clusters, clusters = clusters, cluster_members=cluster_members, min_samples=config['results']['min_samples'], classifier=config['results']['classifier'],count=count)
 
         if count!=0:
             dbcv_score = calc_dbcv(all_points,original_clusters)
